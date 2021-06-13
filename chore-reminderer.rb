@@ -92,7 +92,7 @@ class ChoreReminderer
     end
 
     def should_notify?(date)
-      return true if DateTime.now.mjd - date.mjd >= 6
+      return true if DateTime.now.sunday? && DateTime.now.mjd - date.mjd >= 6
 
       false
     end
