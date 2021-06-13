@@ -3,7 +3,7 @@ if ENV['APP_ENV'] == 'development'
   Dotenv.load
 end
 
-require_relative './chore-reminderer'
+require_relative '../chore-reminderer'
 
 puts "Notifying..."
 ChoreReminderer.notify!

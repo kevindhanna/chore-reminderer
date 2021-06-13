@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'date'
 require 'logger'
 require 'redis'
 require 'twilio-ruby'
@@ -10,6 +11,35 @@ class Peep
   def initialize(name)
     @name = name
     @number = ENV[name.upcase]
+  end
+end
+
+class Storage
+  class << self
+    def week
+      return redis.get('week').to_i if redis.exists?('week')
+
+      self.week = 1
+      week
+    end
+
+    def week=(new_week)
+      redis.set('week', new_week)
+    end
+
+    def last_notified
+      return DateTime.strptime(redis.get('last_notified')) if redis.exists?('last_notified')
+
+      DateTime.new
+    end
+
+    def last_notified=(date)
+      redis.set('last_notified', date)
+    end
+
+    def redis
+      @redis ||= Redis.new(url: ENV['REDIS_TLS_URL'])
+    end
   end
 end
 
@@ -30,7 +60,12 @@ class ChoreReminderer
     }.freeze
 
     def notify!
-      week = redis.get('week').to_i
+      if !should_notify?(Storage.last_notified)
+        logger.error("Not notifying, to soon after last notification")
+        return nil
+      end
+
+      week = Storage.week
 
       kitchen = house[week % house.length]
       stairs = stairs_peep(kitchen)
@@ -46,14 +81,21 @@ class ChoreReminderer
         end
       end
 
-      redis.set('week', week + 1)
+      Storage.week += 1
+      Storage.last_notified = DateTime.now
     end
+
+    private
 
     def logger
       @logger ||= Logger.new('chore-notifier.log', 'monthly')
     end
 
-    private
+    def should_notify?(date)
+      return true if DateTime.now.mjd - date.mjd >= 6
+
+      false
+    end
 
     def message(chore)
       "Yo yo yo it's your turn to do the #{CHORES[chore]}. Get hustling!"
@@ -83,10 +125,6 @@ class ChoreReminderer
 
     def house
       @house ||= PEEPS.map { |_k, v| v }
-    end
-
-    def redis
-      @redis ||= Redis.new(url: ENV['REDIS_TLS_URL'])
     end
   end
 end
