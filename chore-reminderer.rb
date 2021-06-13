@@ -61,7 +61,7 @@ class ChoreReminderer
 
     def notify!
       if !should_notify?(Storage.last_notified)
-        logger.error("Not notifying, to soon after last notification")
+        logger.info("Not notifying, to soon after last notification")
         return nil
       end
 
