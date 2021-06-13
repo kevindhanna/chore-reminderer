@@ -5,4 +5,6 @@ end
 
 require_relative './chore-reminderer'
 
+puts "Notifying..."
 ChoreReminderer.notify!
+puts "Done!"
