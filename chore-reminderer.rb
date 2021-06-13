@@ -1,9 +1,10 @@
 # frozen_string_literal: true
-
 require 'date'
 require 'logger'
 require 'redis'
 require 'twilio-ruby'
+
+$stdout.sync = true
 
 class Peep
   attr_accessor :name, :number
@@ -88,7 +89,7 @@ class ChoreReminderer
     private
 
     def logger
-      @logger ||= Logger.new('chore-notifier.log', 'monthly')
+      @logger ||= Logger.new(STDOUT)
     end
 
     def should_notify?(date)
@@ -142,7 +143,7 @@ class Messenger
     def client
       @client if @client
       @client = Twilio::REST::Client.new ENV['TWILIO_SID'], ENV['TWILIO_TOKEN']
-      @client.logger = Logger.new('twilio.log')
+      @client.logger = Logger.new(STDOUT)
       @client
     end
   end
